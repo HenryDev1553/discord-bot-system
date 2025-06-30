@@ -8,6 +8,7 @@ Hệ thống quản lý đặt lịch tự động tích hợp Discord, Google S
 
 ## ✨ Tính năng chính
 
+### 📅 Booking System
 - 🔄 **Tự động nhận booking** từ Google Forms qua webhook
 - 💬 **Gửi thông báo Discord** với interactive buttons  
 - ✅ **Xác nhận/Hủy booking** trực tiếp từ Discord
@@ -15,7 +16,20 @@ Hệ thống quản lý đặt lịch tự động tích hợp Discord, Google S
 - 📧 **Gửi email tự động** (xác nhận/hủy)
 - 🔍 **Kiểm tra conflict lịch phòng** thời gian thực
 - 📊 **Cập nhật trạng thái** trong Google Sheets
+
+### 📦 Warehouse Management (Quản lý Kho)
+- 📥 **Nhập kho** nguyên liệu (`/nhapkho`)
+- 📤 **Xuất kho** nguyên liệu (`/xuatkho`)
+- 🔄 **Chế biến** nguyên liệu (`/chebien`)
+- 🗑️ **Hủy nguyên liệu** (`/huynguyenlieu`)
+- 📊 **Kiểm tra trạng thái** hệ thống (`/khostatus`)
+- 🔒 **Giới hạn kênh**: Chỉ hoạt động trong `#report-kho`
+- 📝 **Tích hợp Google Apps Script** cho backend
+
+### 🛡️ Security & Features
 - 🛡️ **Bảo mật và logging** đầy đủ
+- 🔒 **Channel restriction** cho warehouse commands
+- 📱 **Interactive Discord UI** với buttons và embeds
 
 ## 🏗️ Kiến trúc hệ thống
 
@@ -235,6 +249,12 @@ discord-bot-system/
 ├── mail/
 │   ├── __init__.py
 │   └── email_manager.py        # Google Apps Script Email
+├── kho/                        # Warehouse Management Module
+│   ├── __init__.py
+│   ├── kho_manager.py          # Warehouse backend manager
+│   ├── kho_commands.py         # Discord commands
+│   ├── README.md               # Module documentation
+│   └── CHANNEL_RESTRICTION_GUIDE.md  # Channel restriction guide
 ├── web/
 │   ├── __init__.py
 │   └── webhook_server.py       # Flask webhook
@@ -243,9 +263,53 @@ discord-bot-system/
 ├── requirements.txt            # Dependencies
 ├── .env.example               # Template biến môi trường
 ├── credentials.json           # Google Service Account (tự tạo)
-├── google_apps_script.js      # Code Apps Script
+├── google_apps_script.js      # Code Apps Script cho booking
+├── google_apps_script_email.js # Code Apps Script cho email
 └── README.md                  # Hướng dẫn này
 ```
+
+## 📦 Warehouse Management (Quản lý Kho)
+
+### Tính năng
+
+Hệ thống quản lý kho được tích hợp hoàn toàn vào Discord bot với các tính năng:
+
+- **Nhập kho**: Ghi nhận nguyên liệu mới nhập kho
+- **Xuất kho**: Theo dõi nguyên liệu xuất kho
+- **Chế biến**: Ghi nhận quá trình chế biến nguyên liệu
+- **Hủy nguyên liệu**: Xử lý nguyên liệu hết hạn/hỏng
+- **Trạng thái hệ thống**: Kiểm tra cấu hình và kết nối
+
+### Giới hạn kênh 🔒
+
+**Quan trọng**: Tất cả lệnh quản lý kho chỉ hoạt động trong kênh `#report-kho`
+
+### Danh sách lệnh
+
+| Lệnh | Cú pháp | Ví dụ |
+|------|---------|-------|
+| `/nhapkho` | `Tên NL - SL nhập - Tổng SL` | `/nhapkho Cà phê - 10 - 50` |
+| `/xuatkho` | `Tên NL - SL xuất - SL còn lại` | `/xuatkho Cà phê - 5 - 45` |
+| `/chebien` | `Tên NL - Dung tích` | `/chebien Cà phê rang - 2 lít` |
+| `/huynguyenlieu` | `Tên NL - SL hủy - Lý do` | `/huynguyenlieu Cà phê - 1kg - hết hạn` |
+| `/khostatus` | - | `/khostatus` |
+| `/khohelp` | - | `/khohelp` |
+
+### Cấu hình Warehouse
+
+1. **Tạo Google Apps Script cho warehouse**
+2. **Cập nhật `.env`**:
+   ```bash
+   KHO_WEB_APP_URL=your_warehouse_apps_script_url
+   KHO_CHANNEL_NAME=report-kho
+   ```
+3. **Tạo kênh Discord**: `#report-kho`
+
+### Sử dụng
+
+1. Vào kênh `#report-kho`
+2. Gõ `/khohelp` để xem hướng dẫn
+3. Sử dụng các lệnh quản lý kho
 
 ## 🔧 Troubleshooting
 

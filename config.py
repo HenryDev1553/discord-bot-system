@@ -35,6 +35,12 @@ class Config:
     APPSCRIPT_TIMEOUT = int(os.getenv('APPSCRIPT_TIMEOUT', '30'))
     APPSCRIPT_MAX_RETRIES = int(os.getenv('APPSCRIPT_MAX_RETRIES', '3'))
     
+    # Kho Management Configuration
+    KHO_WEB_APP_URL = os.getenv('KHO_WEB_APP_URL', None)
+    KHO_TIMEOUT = int(os.getenv('KHO_TIMEOUT', '30'))
+    KHO_MAX_RETRIES = int(os.getenv('KHO_MAX_RETRIES', '3'))
+    KHO_CHANNEL_NAME = os.getenv('KHO_CHANNEL_NAME', 'report-kho')
+    
     # Disable email entirely if needed
     DISABLE_EMAIL = os.getenv('DISABLE_EMAIL', 'false').lower() == 'true'
 

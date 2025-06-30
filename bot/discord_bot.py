@@ -263,12 +263,15 @@ class DiscordBookingBot(commands.Bot):
     """
     
     def __init__(self):
-        # Thiết lập intents (không cần privileged intents)
+        # Thiết lập intents (đã bật privileged intents trong Discord Developer Portal)
         intents = discord.Intents.default()
-        intents.message_content = False  # Không cần đọc message content
-        intents.guilds = True
+        intents.message_content = True   # Cần để đọc nội dung message và commands
+        intents.presences = False        # Không cần presence updates
+        intents.members = False          # Không cần member events
+        intents.guilds = True            # Cần để bot hoạt động
+        intents.guild_messages = True    # Cần để nhận messages
         
-        super().__init__(command_prefix='!', intents=intents)
+        super().__init__(command_prefix='/', intents=intents)
         
         # Khởi tạo managers
         self.sheets_manager = GoogleSheetsManager()
@@ -481,3 +484,17 @@ class DiscordBookingBot(commands.Bot):
         except Exception as e:
             logger.error(f"Error in refresh_booking command: {e}")
             await interaction.followup.send(f"❌ Lỗi: {str(e)}")
+
+    async def load_extensions(self):
+        """Load các extensions/cogs"""
+        try:
+            # Load kho commands
+            await self.load_extension('kho.kho_commands')
+            logger.info("Loaded kho.kho_commands extension")
+        except Exception as e:
+            logger.error(f"Failed to load kho.kho_commands extension: {e}")
+
+    async def setup_hook(self):
+        """Setup hook được gọi khi bot khởi động"""
+        await self.load_extensions()
+        logger.info("Bot setup completed")
