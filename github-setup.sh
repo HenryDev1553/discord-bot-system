@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# GitHub Repository Setup Instructions
+echo "🚀 Setting up GitHub repository for Discord Booking System"
+echo "==========================================================="
+echo ""
+echo "1. Go to GitHub.com and create a new repository:"
+echo "   - Repository name: discord-booking-system"
+echo "   - Description: Automated booking management system with Discord, Google Sheets, and Calendar integration"
+echo "   - Set to Public or Private (your choice)"
+echo "   - Don't initialize with README, .gitignore, or license (we already have them)"
+echo ""
+echo "2. After creating the repository, GitHub will show you commands to push existing code."
+echo "   Use these commands:"
+echo ""
+echo "   git remote add origin https://github.com/YOUR_USERNAME/discord-booking-system.git"
+echo "   git push -u origin main"
+echo ""
+echo "3. Or if you prefer SSH (recommended for VPS deployment):"
+echo "   git remote add origin git@github.com:YOUR_USERNAME/discord-booking-system.git"
+echo "   git push -u origin main"
+echo ""
+echo "Current directory: $(pwd)"
+echo "Git status:"
+git status
+echo ""
+echo "Files ready to push:"
+git ls-files
+echo ""
+echo "Once you've created the repository and added the remote, run:"
+echo "git push -u origin main"

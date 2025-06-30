@@ -1,44 +1,178 @@
-import smtplib
+"""
+Email Manager sử dụng Google Apps Script Web App
+Thay thế hoàn toàn SMTP để tránh bị block ports trên VPS
+"""
+
+import requests
 import logging
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
+from typing import Dict, Optional, Any
 from config import Config
-from datetime import datetime
-import pytz
 
 logger = logging.getLogger(__name__)
 
 class EmailManager:
     """
-    Class quản lý gửi email thông báo booking
+    Email Manager sử dụng Google Apps Script Web App
+    Gửi email thông qua POST request đến Apps Script để tránh bị block SMTP ports
     """
     
-    def __init__(self):
-        self.smtp_server = Config.SMTP_SERVER
-        self.smtp_port = Config.SMTP_PORT
-        self.email = Config.GMAIL_EMAIL
-        self.password = Config.GMAIL_PASSWORD
-        self.timezone = pytz.timezone(Config.TIMEZONE)
-    
-    def _create_smtp_connection(self):
+    def __init__(self, appscript_url: Optional[str] = None):
         """
-        Tạo kết nối SMTP với Gmail
+        Khởi tạo Email Manager
         
+        Args:
+            appscript_url (str, optional): URL của Apps Script Web App
+        """
+        self.appscript_url = appscript_url or getattr(Config, 'APPSCRIPT_WEBHOOK_URL', None)
+        
+        if not self.appscript_url:
+            logger.warning("APPSCRIPT_WEBHOOK_URL not configured. Email sending will be disabled.")
+        
+        # Timeout settings
+        self.timeout = getattr(Config, 'APPSCRIPT_TIMEOUT', 30)
+        self.max_retries = getattr(Config, 'APPSCRIPT_MAX_RETRIES', 3)
+    
+    def send_mail_via_appscript(
+        self, 
+        to: str, 
+        subject: str, 
+        body: str, 
+        html_body: Optional[str] = None,
+        sender_name: Optional[str] = None
+    ) -> bool:
+        """
+        Gửi email thông qua Google Apps Script
+        
+        Args:
+            to (str): Email người nhận
+            subject (str): Tiêu đề email
+            body (str): Nội dung text thuần
+            html_body (str, optional): Nội dung HTML
+            sender_name (str, optional): Tên người gửi
+            
         Returns:
-            smtplib.SMTP: SMTP connection object
+            bool: True nếu gửi thành công, False nếu thất bại
+        """
+        if not self.appscript_url:
+            logger.error("AppScript URL not configured. Cannot send email.")
+            return False
+            
+        if not to or not subject or not body:
+            logger.error("Missing required email parameters: to, subject, or body")
+            return False
+        
+        # Tạo payload gửi đến Apps Script
+        payload = {
+            'to': to,
+            'subject': subject,
+            'body': body,
+            'htmlBody': html_body,
+            'senderName': sender_name or getattr(Config, 'COMPANY_NAME', 'Discord Booking System')
+        }
+        
+        # Headers cho request
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Discord-Booking-Bot/1.0'
+        }
+        
+        # Thử gửi với retry mechanism
+        for attempt in range(self.max_retries):
+            try:
+                logger.info(f"Sending email to {to} via AppScript (attempt {attempt + 1}/{self.max_retries})")
+                
+                response = requests.post(
+                    self.appscript_url,
+                    json=payload,
+                    headers=headers,
+                    timeout=self.timeout
+                )
+                
+                # Kiểm tra response
+                if response.status_code == 200:
+                    response_data = response.json()
+                    
+                    if response_data.get('success', False):
+                        logger.info(f"Email sent successfully to {to} via AppScript")
+                        return True
+                    else:
+                        error_msg = response_data.get('error', 'Unknown error from AppScript')
+                        logger.error(f"AppScript returned error: {error_msg}")
+                        
+                else:
+                    logger.error(f"AppScript request failed with status {response.status_code}: {response.text}")
+                    
+            except requests.exceptions.Timeout:
+                logger.warning(f"Request to AppScript timed out (attempt {attempt + 1})")
+                
+            except requests.exceptions.ConnectionError:
+                logger.warning(f"Connection error to AppScript (attempt {attempt + 1})")
+                
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Request error to AppScript: {e}")
+                
+            except Exception as e:
+                logger.error(f"Unexpected error sending email via AppScript: {e}")
+            
+            # Nếu không phải lần thử cuối, chờ một chút trước khi retry
+            if attempt < self.max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff
+        
+        logger.error(f"Failed to send email to {to} after {self.max_retries} attempts")
+        return False
+    
+    def send_confirmation_email(self, booking_data: Dict[str, Any]) -> bool:
+        """
+        Gửi email xác nhận booking
+        
+        Args:
+            booking_data (dict): Thông tin booking
+            
+        Returns:
+            bool: True nếu gửi thành công
         """
         try:
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()  # Enable encryption
-            server.login(self.email, self.password)
-            return server
+            subject, html_body, text_body = self._create_email_template('confirmation', booking_data)
+            
+            return self.send_mail_via_appscript(
+                to=booking_data.get('email'),
+                subject=subject,
+                body=text_body,
+                html_body=html_body,
+                sender_name=getattr(Config, 'COMPANY_NAME', 'Discord Booking System')
+            )
+            
         except Exception as e:
-            logger.error(f"Failed to create SMTP connection: {e}")
-            raise
+            logger.error(f"Error sending confirmation email: {e}")
+            return False
     
-    def _create_email_template(self, template_type, booking_data):
+    def send_cancellation_email(self, booking_data: Dict[str, Any]) -> bool:
+        """
+        Gửi email hủy booking
+        
+        Args:
+            booking_data (dict): Thông tin booking
+            
+        Returns:
+            bool: True nếu gửi thành công
+        """
+        try:
+            subject, html_body, text_body = self._create_email_template('cancellation', booking_data)
+            
+            return self.send_mail_via_appscript(
+                to=booking_data.get('email'),
+                subject=subject,
+                body=text_body,
+                html_body=html_body,
+                sender_name=getattr(Config, 'COMPANY_NAME', 'Discord Booking System')
+            )
+            
+        except Exception as e:
+            logger.error(f"Error sending cancellation email: {e}")
+            return False
+    
+    def _create_email_template(self, template_type: str, booking_data: Dict[str, Any]):
         """
         Tạo template email dựa trên loại thông báo
         
@@ -49,6 +183,9 @@ class EmailManager:
         Returns:
             tuple: (subject, html_body, text_body)
         """
+        import pytz
+        from datetime import datetime
+        
         customer_name = booking_data.get('name', 'Quý khách')
         booking_date = booking_data.get('date', '')
         
@@ -60,18 +197,19 @@ class EmailManager:
         room = booking_data.get('room', '')
         
         # Lấy thời gian hiện tại
-        now = datetime.now(self.timezone)
+        timezone = pytz.timezone(getattr(Config, 'TIMEZONE', 'Asia/Ho_Chi_Minh'))
+        now = datetime.now(timezone)
         formatted_time = now.strftime("%d/%m/%Y lúc %H:%M")
         
         if template_type == 'confirmation':
-            subject = f"Xác Nhận Đặt Lịch - {room} - {booking_date} {booking_time}"
+            subject = f"✅ Xác Nhận Đặt Lịch - {room} - {booking_date} {booking_time}"
             
             html_body = f"""
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                     <div style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center;">
-                        <h1 style="margin: 0; font-size: 24px;">Đặt lịch đã được xác nhận!</h1>
+                        <h1 style="margin: 0; font-size: 24px;">✅ Đặt lịch đã được xác nhận!</h1>
                     </div>
                     
                     <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;">
@@ -99,14 +237,14 @@ class EmailManager:
                         
                         <div style="text-align: center; margin: 30px 0;">
                             <p>Nếu bạn cần hỗ trợ, vui lòng liên hệ:</p>
-                            <p><strong>📧 Email:</strong> {Config.COMPANY_EMAIL}</p>
-                            <p><strong>📞 Điện thoại:</strong> {Config.COMPANY_PHONE}</p>
+                            <p><strong>📧 Email:</strong> {getattr(Config, 'COMPANY_EMAIL', 'contact@company.com')}</p>
+                            <p><strong>📞 Điện thoại:</strong> {getattr(Config, 'COMPANY_PHONE', '+84 123 456 789')}</p>
                         </div>
                         
                         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
                         
                         <p style="text-align: center; color: #666; font-size: 14px;">
-                            Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của <strong>{Config.COMPANY_NAME}</strong>!<br>
+                            Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của <strong>{getattr(Config, 'COMPANY_NAME', 'Your Company')}</strong>!<br>
                             Email này được gửi tự động, vui lòng không reply.
                         </p>
                     </div>
@@ -116,7 +254,7 @@ class EmailManager:
             """
             
             text_body = f"""
-            ĐẶT LỊCH ĐÃ ĐƯỢC XÁC NHẬN!
+            ✅ ĐẶT LỊCH ĐÃ ĐƯỢC XÁC NHẬN!
             
             Kính chào {customer_name},
             
@@ -135,10 +273,10 @@ class EmailManager:
             - Mang theo giấy tờ tùy thân khi đến
             
             LIÊN HỆ HỖ TRỢ:
-            📧 Email: {Config.COMPANY_EMAIL}
-            📞 Điện thoại: {Config.COMPANY_PHONE}
+            📧 Email: {getattr(Config, 'COMPANY_EMAIL', 'contact@company.com')}
+            📞 Điện thoại: {getattr(Config, 'COMPANY_PHONE', '+84 123 456 789')}
             
-            Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của {Config.COMPANY_NAME}!
+            Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của {getattr(Config, 'COMPANY_NAME', 'Your Company')}!
             """
         
         else:  # cancellation
@@ -189,14 +327,14 @@ class EmailManager:
                         
                         <div style="text-align: center; margin: 30px 0;">
                             <p>Chúng tôi xin lỗi vì sự bất tiện này. Để được hỗ trợ:</p>
-                            <p><strong>📧 Email:</strong> {Config.COMPANY_EMAIL}</p>
-                            <p><strong>📞 Điện thoại:</strong> {Config.COMPANY_PHONE}</p>
+                            <p><strong>📧 Email:</strong> {getattr(Config, 'COMPANY_EMAIL', 'contact@company.com')}</p>
+                            <p><strong>📞 Điện thoại:</strong> {getattr(Config, 'COMPANY_PHONE', '+84 123 456 789')}</p>
                         </div>
                         
                         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
                         
                         <p style="text-align: center; color: #666; font-size: 14px;">
-                            Cảm ơn bạn đã hiểu và ủng hộ <strong>{Config.COMPANY_NAME}</strong>!<br>
+                            Cảm ơn bạn đã hiểu và ủng hộ <strong>{getattr(Config, 'COMPANY_NAME', 'Your Company')}</strong>!<br>
                             Email này được gửi tự động, vui lòng không reply.
                         </p>
                     </div>
@@ -232,84 +370,47 @@ class EmailManager:
             - Gửi email yêu cầu hỗ trợ
             
             LIÊN HỆ HỖ TRỢ:
-            📧 Email: {Config.COMPANY_EMAIL}
-            📞 Điện thoại: {Config.COMPANY_PHONE}
+            📧 Email: {getattr(Config, 'COMPANY_EMAIL', 'contact@company.com')}
+            📞 Điện thoại: {getattr(Config, 'COMPANY_PHONE', '+84 123 456 789')}
             
             Xin lỗi vì sự bất tiện. Cảm ơn sự thông cảm của bạn!
             """
         
         return subject, html_body, text_body
     
-    def send_booking_email(self, recipient_email, template_type, booking_data):
+    def test_connection(self) -> bool:
         """
-        Gửi email thông báo booking
-        
-        Args:
-            recipient_email (str): Email người nhận
-            template_type (str): Loại email ('confirmation' hoặc 'cancellation')
-            booking_data (dict): Thông tin booking
+        Test kết nối đến Apps Script Web App
         
         Returns:
-            bool: True nếu gửi thành công
+            bool: True nếu kết nối thành công
         """
-        try:
-            # Tạo email template
-            subject, html_body, text_body = self._create_email_template(template_type, booking_data)
-            
-            # Tạo message
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{Config.COMPANY_NAME} <{self.email}>"
-            msg['To'] = recipient_email
-            
-            # Attach text và HTML versions
-            text_part = MIMEText(text_body, 'plain', 'utf-8')
-            html_part = MIMEText(html_body, 'html', 'utf-8')
-            
-            msg.attach(text_part)
-            msg.attach(html_part)
-            
-            # Gửi email
-            server = self._create_smtp_connection()
-            text = msg.as_string()
-            server.sendmail(self.email, recipient_email, text)
-            server.quit()
-            
-            logger.info(f"Email sent successfully to {recipient_email} - Type: {template_type}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to send email to {recipient_email}: {e}")
+        if not self.appscript_url:
+            logger.error("AppScript URL not configured")
             return False
-    
-    def send_confirmation_email(self, booking_data):
-        """
-        Gửi email xác nhận booking
         
-        Args:
-            booking_data (dict): Thông tin booking
+        test_payload = {
+            'to': 'test@example.com',
+            'subject': 'Test Email Connection',
+            'body': 'This is a test email to verify Apps Script connection.',
+            'test': True  # Flag để Apps Script biết đây là test, không gửi email thật
+        }
         
-        Returns:
-            bool: True nếu gửi thành công
-        """
-        return self.send_booking_email(
-            booking_data.get('email'),
-            'confirmation',
-            booking_data
-        )
-    
-    def send_cancellation_email(self, booking_data):
-        """
-        Gửi email hủy booking
-        
-        Args:
-            booking_data (dict): Thông tin booking
-        
-        Returns:
-            bool: True nếu gửi thành công
-        """
-        return self.send_booking_email(
-            booking_data.get('email'),
-            'cancellation',
-            booking_data
-        )
+        try:
+            response = requests.post(
+                self.appscript_url,
+                json=test_payload,
+                headers={'Content-Type': 'application/json'},
+                timeout=self.timeout
+            )
+            
+            if response.status_code == 200:
+                logger.info("Apps Script connection test successful")
+                return True
+            else:
+                logger.error(f"Apps Script connection test failed: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Apps Script connection test error: {e}")
+            return False

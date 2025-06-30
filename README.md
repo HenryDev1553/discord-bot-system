@@ -28,8 +28,8 @@ Google Calendar ← Google Sheets ← Email System
 ## 📋 Yêu cầu hệ thống
 
 - Python 3.10+
-- Gmail với App Password
 - Google Cloud Project với Sheets API + Calendar API enabled
+- Google Apps Script để gửi email
 - Discord Bot Token
 - ngrok (để expose local server)
 
@@ -134,28 +134,23 @@ Cần các permissions sau:
 3. Chọn permissions cần thiết
 4. Copy URL và mời bot vào server
 
-### 5. Cấu hình Gmail SMTP
+### 5. Cấu hình Google Apps Script cho Email
 
-#### 5.1. Bật 2-Factor Authentication
+#### 5.1. Tạo Apps Script Web App cho Email
 
-1. Vào Google Account Settings
-2. Security > 2-Step Verification
-3. Bật 2FA
+1. Tạo project mới trên [Google Apps Script](https://script.google.com/)
+2. Copy code từ file `google_apps_script_email.js`
+3. Deploy as Web App:
+   - Execute as: Me
+   - Access: Anyone
+4. Copy Web App URL và paste vào `.env` như `APPSCRIPT_WEBHOOK_URL`
 
-#### 5.2. Tạo App Password
+### 6. Cấu hình Google Apps Script cho Webhook
 
-1. Vào Security > App passwords
-2. Chọn app: "Mail"
-3. Chọn device: "Other"
-4. Nhập tên (VD: "Discord Booking Bot")
-5. Copy password và paste vào `.env`
-
-### 6. Cấu hình Google Apps Script
-
-#### 6.1. Tạo Apps Script Project
+#### 6.1. Tạo Apps Script Project cho Webhook
 
 1. Truy cập [Google Apps Script](https://script.google.com/)
-2. Tạo project mới
+2. Tạo project mới  
 3. Copy code từ file `google_apps_script.js`
 4. Paste vào Apps Script editor
 
@@ -239,7 +234,7 @@ discord-bot-system/
 │   └── manager.py              # Google Sheets API
 ├── mail/
 │   ├── __init__.py
-│   └── email_manager.py        # Gmail SMTP
+│   └── email_manager.py        # Google Apps Script Email
 ├── web/
 │   ├── __init__.py
 │   └── webhook_server.py       # Flask webhook
@@ -266,10 +261,10 @@ discord-bot-system/
 - Kiểm tra service account đã được chia sẻ sheet
 - Kiểm tra Sheet ID trong `.env`
 
-#### 3. Gmail SMTP lỗi
-- Kiểm tra App Password (không phải password thường)
-- Kiểm tra 2FA đã bật
-- Kiểm tra Less Secure Apps setting
+#### 3. Email System lỗi
+- Kiểm tra APPSCRIPT_WEBHOOK_URL trong `.env`
+- Kiểm tra Apps Script Web App đã deploy đúng
+- Kiểm tra quyền truy cập Web App
 
 #### 4. Webhook không nhận được
 - Kiểm tra ngrok đang chạy

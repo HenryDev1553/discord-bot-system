@@ -7,7 +7,7 @@ from datetime import datetime
 import pytz
 from config import Config
 from google_sheets.manager import GoogleSheetsManager
-from mail.email_manager import EmailManager
+from mail import EmailManager
 
 logger = logging.getLogger(__name__)
 

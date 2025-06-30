@@ -59,8 +59,7 @@ sudo -u discord-bot nano /home/discord-bot/discord-booking-bot/.env
 - `DISCORD_BOT_TOKEN`: Token của Discord Bot
 - `DISCORD_CHANNEL_ID`: ID channel Discord
 - `GOOGLE_SHEETS_ID`: ID của Google Sheet
-- `GMAIL_EMAIL`: Email Gmail
-- `GMAIL_PASSWORD`: App Password của Gmail
+- `APPSCRIPT_WEBHOOK_URL`: URL của Google Apps Script Web App để gửi email
 - `GOOGLE_CALENDAR_ID`: ID của Google Calendar
 
 #### 3.2. Upload Google Service Account credentials

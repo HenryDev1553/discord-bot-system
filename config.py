@@ -22,12 +22,6 @@ class Config:
     # Google Calendar Configuration
     GOOGLE_CALENDAR_ID = os.getenv('GOOGLE_CALENDAR_ID', 'primary')
     
-    # Gmail SMTP Configuration
-    GMAIL_EMAIL = os.getenv('GMAIL_EMAIL')
-    GMAIL_PASSWORD = os.getenv('GMAIL_PASSWORD')  # App password
-    SMTP_SERVER = 'smtp.gmail.com'
-    SMTP_PORT = 587
-    
     # Timezone Configuration
     TIMEZONE = os.getenv('TIMEZONE', 'Asia/Ho_Chi_Minh')
     
@@ -35,6 +29,14 @@ class Config:
     COMPANY_NAME = os.getenv('COMPANY_NAME', 'Your Company')
     COMPANY_EMAIL = os.getenv('COMPANY_EMAIL', 'contact@company.com')
     COMPANY_PHONE = os.getenv('COMPANY_PHONE', '+84 123 456 789')
+    
+    # Apps Script Email Configuration
+    APPSCRIPT_WEBHOOK_URL = os.getenv('APPSCRIPT_WEBHOOK_URL', None)
+    APPSCRIPT_TIMEOUT = int(os.getenv('APPSCRIPT_TIMEOUT', '30'))
+    APPSCRIPT_MAX_RETRIES = int(os.getenv('APPSCRIPT_MAX_RETRIES', '3'))
+    
+    # Disable email entirely if needed
+    DISABLE_EMAIL = os.getenv('DISABLE_EMAIL', 'false').lower() == 'true'
 
 # Validation để kiểm tra các biến môi trường bắt buộc
 def validate_config():
@@ -42,8 +44,7 @@ def validate_config():
         'DISCORD_BOT_TOKEN',
         'DISCORD_CHANNEL_ID',
         'GOOGLE_SHEETS_ID',
-        'GMAIL_EMAIL',
-        'GMAIL_PASSWORD'
+        'APPSCRIPT_WEBHOOK_URL'
     ]
     
     missing_vars = []

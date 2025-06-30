@@ -77,11 +77,11 @@ GOOGLE_CREDENTIALS_PATH=/home/discord-bot/discord-booking-bot/credentials/servic
 GOOGLE_CALENDAR_ID=your_google_calendar_id_here
 SHEET_NAME=Sheet1
 
-# Email Configuration
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your_email@gmail.com
-SMTP_PASSWORD=your_gmail_app_password_here
+# Email Configuration via Google Apps Script
+APPSCRIPT_WEBHOOK_URL=your_appscript_webhook_url_here
+APPSCRIPT_TIMEOUT=30
+APPSCRIPT_MAX_RETRIES=3
+DISABLE_EMAIL=false
 
 # Webhook Configuration
 WEBHOOK_HOST=0.0.0.0
