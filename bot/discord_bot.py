@@ -199,8 +199,9 @@ class BookingView(discord.ui.View):
                 logger.info("📅 Note: Calendar event (if exists) should be deleted manually")
                     
             elif status == 'error':
-                # Có thể gửi email thông báo lỗi hoặc không gửi gì
-                email_sent = True  # Giả sử không cần gửi email cho lịch lỗi
+                # Gửi email thông báo lỗi cho khách hàng
+                email_sent = self.email_manager.send_error_email(self.booking_data)
+                logger.info(f"Error email sent to {self.booking_data.get('email')}: {email_sent}")
             
             # Cập nhật message Discord
             embed = discord.Embed(
@@ -224,7 +225,7 @@ class BookingView(discord.ui.View):
             embed.add_field(name="👨‍💼 Xử lý bởi", value=f"{admin_name}", inline=True)
             
             # Status-specific fields
-            if status in ['confirmed', 'cancelled']:
+            if status in ['confirmed', 'cancelled', 'error']:
                 embed.add_field(name="📧 Email gửi", value="✅ Thành công" if email_sent else "❌ Thất bại", inline=True)
             
             # Trạng thái mapping

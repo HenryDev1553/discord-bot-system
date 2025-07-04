@@ -172,12 +172,37 @@ class EmailManager:
             logger.error(f"Error sending cancellation email: {e}")
             return False
     
+    def send_error_email(self, booking_data: Dict[str, Any]) -> bool:
+        """
+        Gửi email thông báo lỗi booking
+        
+        Args:
+            booking_data (dict): Thông tin booking
+            
+        Returns:
+            bool: True nếu gửi thành công
+        """
+        try:
+            subject, html_body, text_body = self._create_email_template('error', booking_data)
+            
+            return self.send_mail_via_appscript(
+                to=booking_data.get('email'),
+                subject=subject,
+                body=text_body,
+                html_body=html_body,
+                sender_name=getattr(Config, 'COMPANY_NAME', 'Discord Booking System')
+            )
+            
+        except Exception as e:
+            logger.error(f"Error sending error notification email: {e}")
+            return False
+
     def _create_email_template(self, template_type: str, booking_data: Dict[str, Any]):
         """
         Tạo template email dựa trên loại thông báo
         
         Args:
-            template_type (str): 'confirmation' hoặc 'cancellation'
+            template_type (str): 'confirmation', 'cancellation', hoặc 'error'
             booking_data (dict): Thông tin booking
         
         Returns:
@@ -279,7 +304,7 @@ class EmailManager:
             Cảm ơn bạn đã tin tưởng sử dụng dịch vụ của {getattr(Config, 'COMPANY_NAME', 'Your Company')}!
             """
         
-        else:  # cancellation
+        elif template_type == 'cancellation':
             subject = f"❌ Thông báo hủy lịch - {booking_date} {booking_time}"
             
             html_body = f"""
@@ -374,6 +399,115 @@ class EmailManager:
             📞 Điện thoại: {getattr(Config, 'COMPANY_PHONE', '+84 123 456 789')}
             
             Xin lỗi vì sự bất tiện. Cảm ơn sự thông cảm của bạn!
+            """
+        
+        else:  # error
+            subject = f"⚠️ Thông báo lỗi thông tin đặt lịch - {booking_date} {booking_time}"
+            
+            html_body = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center;">
+                        <h1 style="margin: 0; font-size: 24px;">⚠️ Lỗi thông tin đặt lịch</h1>
+                    </div>
+                    
+                    <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd;">
+                        <p>Kính chào <strong>{customer_name}</strong>,</p>
+                        
+                        <p>Chúng tôi nhận thấy có <strong style="color: #ff9800;">LỖI THÔNG TIN</strong> trong form đặt lịch của bạn.</p>
+                        
+                        <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
+                            <h3 style="color: #ff9800; margin-top: 0;">📋 Thông tin lịch đã điền:</h3>
+                            <p><strong>📅 Ngày:</strong> {booking_date}</p>
+                            <p><strong>⏰ Giờ:</strong> {booking_time}</p>
+                            <p><strong>🏢 Phòng/Địa điểm:</strong> {room}</p>
+                            <p><strong>⚠️ Trạng thái:</strong> <span style="color: #ff9800; font-weight: bold;">Lỗi thông tin</span></p>
+                            <p><strong>📆 Thời gian phát hiện lỗi:</strong> {formatted_time}</p>
+                        </div>
+                        
+                        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <h4 style="color: #e65100; margin-top: 0;">🔍 Các lỗi thường gặp:</h4>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                <li><strong>Ngày tháng năm:</strong> Định dạng không đúng hoặc ngày không hợp lệ</li>
+                                <li><strong>Giờ bắt đầu:</strong> Sai định dạng giờ (VD: 25:00) hoặc không điền đầy đủ</li>
+                                <li><strong>Giờ kết thúc:</strong> Sai định dạng hoặc trước giờ bắt đầu</li>
+                                <li><strong>Khoảng thời gian:</strong> Quá ngắn hoặc quá dài</li>
+                                <li><strong>Thông tin thiếu:</strong> Một số trường bắt buộc chưa điền</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <h4 style="color: #2e7d32; margin-top: 0;">✅ Cách khắc phục:</h4>
+                            <p><strong>1. Kiểm tra lại thông tin:</strong></p>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                <li>Ngày: DD/MM/YYYY (VD: 15/07/2025)</li>
+                                <li>Giờ: HH:MM (VD: 14:30)</li>
+                                <li>Đảm bảo giờ kết thúc sau giờ bắt đầu</li>
+                            </ul>
+                            
+                            <p><strong>2. Đặt lại lịch với thông tin chính xác:</strong></p>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                <li>Điền lại form đặt lịch với thông tin đúng</li>
+                                <li>Kiểm tra kỹ trước khi gửi</li>
+                                <li>Hoặc gọi điện thoại để được hỗ trợ trực tiếp</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <p>Nếu bạn cần hỗ trợ, vui lòng liên hệ:</p>
+                            <p><strong>📧 Email:</strong> {getattr(Config, 'COMPANY_EMAIL', 'contact@company.com')}</p>
+                            <p><strong>📞 Điện thoại:</strong> {getattr(Config, 'COMPANY_PHONE', '+84 123 456 789')}</p>
+                        </div>
+                        
+                        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+                        
+                        <p style="text-align: center; color: #666; font-size: 14px;">
+                            Cảm ơn bạn đã sử dụng dịch vụ của <strong>{getattr(Config, 'COMPANY_NAME', 'Your Company')}</strong>!<br>
+                            Email này được gửi tự động, vui lòng không reply.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            text_body = f"""
+            ⚠️ LỖI THÔNG TIN ĐẶT LỊCH
+            
+            Kính chào {customer_name},
+            
+            Chúng tôi nhận thấy có LỖI THÔNG TIN trong form đặt lịch của bạn.
+            
+            THÔNG TIN LỊCH ĐÃ ĐIỀN:
+            📅 Ngày: {booking_date}
+            ⏰ Giờ: {booking_time}
+            🏢 Phòng: {room}
+            ⚠️ Trạng thái: Lỗi thông tin
+            📆 Thời gian phát hiện lỗi: {formatted_time}
+            
+            CÁC LỖI THƯỜNG GẶP:
+            - Ngày tháng năm: Định dạng không đúng hoặc ngày không hợp lệ
+            - Giờ bắt đầu: Sai định dạng giờ (VD: 25:00) hoặc không điền đầy đủ
+            - Giờ kết thúc: Sai định dạng hoặc trước giờ bắt đầu
+            
+            CÁCH KHẮC PHỤC:
+            1. Kiểm tra lại thông tin:
+               - Ngày: DD/MM/YYYY (VD: 15/07/2025)
+               - Giờ: HH:MM (VD: 14:30)
+               - Đảm bảo giờ kết thúc sau giờ bắt đầu
+               - Điền đầy đủ tất cả các trường bắt buộc
+            
+            2. Đặt lại lịch với thông tin chính xác:
+               - Điền lại form đặt lịch với thông tin đúng
+               - Kiểm tra kỹ trước khi gửi
+               - Hoặc gọi điện thoại để được hỗ trợ trực tiếp
+            
+            LIÊN HỆ HỖ TRỢ:
+            📧 Email: {getattr(Config, 'COMPANY_EMAIL', 'contact@company.com')}
+            📞 Điện thoại: {getattr(Config, 'COMPANY_PHONE', '+84 123 456 789')}
+            
+            Cảm ơn bạn đã sử dụng dịch vụ của {getattr(Config, 'COMPANY_NAME', 'Your Company')}!
             """
         
         return subject, html_body, text_body

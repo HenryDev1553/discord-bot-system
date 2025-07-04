@@ -43,7 +43,7 @@ class KhoCommands(commands.Cog):
         embed = discord.Embed(
             title="❌ Kênh Không Hợp Lệ",
             color=discord.Color.red(),
-            description=f"🚫 Lệnh quản lý kho chỉ có thể sử dụng trong kênh **#{self.allowed_channel}**\n\n"
+            description=f"🚫 Lệnh quản lý kho chỉ có thể sử dụng trong kênh **#{self.allowed_channel}**\n"
                        f"📍 Vui lòng chuyển sang kênh **#{self.allowed_channel}** để sử dụng các lệnh kho."
         )
         await ctx.send(embed=embed, delete_after=10)
@@ -82,17 +82,26 @@ class KhoCommands(commands.Cog):
             return
             
         if not args:
-            await ctx.send("⚠️ **Sai định dạng!**\\n"
-                          "📝 **Cú pháp:** `/nhapkho Tên nguyên liệu - SL nhập - Tổng SL`\\n"
-                          "📋 **Ví dụ:** `/nhapkho Cà phê - 10 - 50`")
+            embed = discord.Embed(
+                title="⚠️ Sai định dạng!",
+                color=discord.Color.orange(),
+                description="📝 **Cú pháp:** `/nhapkho Tên nguyên liệu - SL nhập - Tổng SL`"
+                            "\n"
+                           "📋 **Ví dụ:** `/nhapkho Cà phê - 10 - 50`"
+            )
+            await ctx.send(embed=embed)
             return
         
         # Parse arguments
         parts = self._parse_command_args(args, 3)
         if not parts:
-            await ctx.send("⚠️ **Sai định dạng!**\\n"
-                          "📝 **Cú pháp:** `/nhapkho Tên nguyên liệu - SL nhập - Tổng SL`\\n"
-                          "📋 **Ví dụ:** `/nhapkho Cà phê - 10 - 50`")
+            embed = discord.Embed(
+                title="⚠️ Sai định dạng!",
+                color=discord.Color.orange(),
+                description="📝 **Cú pháp:** `/nhapkho Tên nguyên liệu - SL nhập - Tổng SL`\n"
+                           "📋 **Ví dụ:** `/nhapkho Cà phê - 10 - 50`"
+            )
+            await ctx.send(embed=embed)
             return
         
         try:
@@ -115,9 +124,9 @@ class KhoCommands(commands.Cog):
                 embed = discord.Embed(
                     title="✅ Nhập Kho Thành Công",
                     color=discord.Color.green(),
-                    description=f"**Nguyên liệu:** {ten_nguyen_lieu}\\n"
-                               f"**Số lượng nhập:** {so_luong_nhap}\\n"
-                               f"**Tổng số lượng:** {tong_so_luong}\\n"
+                    description=f"**Nguyên liệu:** {ten_nguyen_lieu}\n"
+                               f"**Số lượng nhập:** {so_luong_nhap}\n"
+                               f"**Tổng số lượng:** {tong_so_luong}\n"
                                f"**Người nhập:** {username}"
                 )
                 await ctx.send(embed=embed)
@@ -145,17 +154,25 @@ class KhoCommands(commands.Cog):
             return
             
         if not args:
-            await ctx.send("⚠️ **Sai định dạng!**\\n"
-                          "📝 **Cú pháp:** `/xuatkho Tên nguyên liệu - SL xuất - SL còn lại`\\n"
-                          "📋 **Ví dụ:** `/xuatkho Cà phê - 5 - 45`")
+            embed = discord.Embed(
+                title="⚠️ Sai định dạng!",
+                color=discord.Color.orange(),
+                description="📝 **Cú pháp:** `/xuatkho Tên nguyên liệu - SL xuất - SL còn lại`\n"
+                           "📋 **Ví dụ:** `/xuatkho Cà phê - 5 - 45`"
+            )
+            await ctx.send(embed=embed)
             return
         
         # Parse arguments
         parts = self._parse_command_args(args, 3)
         if not parts:
-            await ctx.send("⚠️ **Sai định dạng!**\\n"
-                          "📝 **Cú pháp:** `/xuatkho Tên nguyên liệu - SL xuất - SL còn lại`\\n"
-                          "📋 **Ví dụ:** `/xuatkho Cà phê - 5 - 45`")
+            embed = discord.Embed(
+                title="⚠️ Sai định dạng!",
+                color=discord.Color.orange(),
+                description="📝 **Cú pháp:** `/xuatkho Tên nguyên liệu - SL xuất - SL còn lại`\n"
+                           "📋 **Ví dụ:** `/xuatkho Cà phê - 5 - 45`"
+            )
+            await ctx.send(embed=embed)
             return
         
         try:
@@ -179,9 +196,9 @@ class KhoCommands(commands.Cog):
                 embed = discord.Embed(
                     title="✅ Xuất Kho Thành Công",
                     color=discord.Color.blue(),
-                    description=f"**Nguyên liệu:** {ten_nguyen_lieu}\\n"
-                               f"**Số lượng xuất:** {so_luong_xuat}\\n"
-                               f"**Số lượng còn lại:** {so_luong_con_lai}\\n"
+                    description=f"**Nguyên liệu:** {ten_nguyen_lieu}\n"
+                               f"**Số lượng xuất:** {so_luong_xuat}\n"
+                               f"**Số lượng còn lại:** {so_luong_con_lai}\n"
                                f"**Người xuất:** {username}"
                 )
                 await ctx.send(embed=embed)
@@ -209,17 +226,25 @@ class KhoCommands(commands.Cog):
             return
             
         if not args:
-            await ctx.send("⚠️ **Sai định dạng!**\\n"
-                          "📝 **Cú pháp:** `/chebien Tên nguyên liệu - Dung tích có được`\\n"
-                          "📋 **Ví dụ:** `/chebien Cà phê rang - 2 lít`")
+            embed = discord.Embed(
+                title="⚠️ Sai định dạng!",
+                color=discord.Color.orange(),
+                description="📝 **Cú pháp:** `/chebien Tên nguyên liệu - Dung tích có được`\n"
+                           "📋 **Ví dụ:** `/chebien Cà phê rang - 2 lít`"
+            )
+            await ctx.send(embed=embed)
             return
         
         # Parse arguments
         parts = self._parse_command_args(args, 2)
         if not parts:
-            await ctx.send("⚠️ **Sai định dạng!**\\n"
-                          "📝 **Cú pháp:** `/chebien Tên nguyên liệu - Dung tích có được`\\n"
-                          "📋 **Ví dụ:** `/chebien Cà phê rang - 2 lít`")
+            embed = discord.Embed(
+                title="⚠️ Sai định dạng!",
+                color=discord.Color.orange(),
+                description="📝 **Cú pháp:** `/chebien Tên nguyên liệu - Dung tích có được`\n"
+                           "📋 **Ví dụ:** `/chebien Cà phê rang - 2 lít`"
+            )
+            await ctx.send(embed=embed)
             return
         
         try:
@@ -240,8 +265,8 @@ class KhoCommands(commands.Cog):
                 embed = discord.Embed(
                     title="✅ Chế Biến Thành Công",
                     color=discord.Color.orange(),
-                    description=f"**Nguyên liệu:** {ten_nguyen_lieu}\\n"
-                               f"**Dung tích có được:** {dung_tich}\\n"
+                    description=f"**Nguyên liệu:** {ten_nguyen_lieu}\n"
+                               f"**Dung tích có được:** {dung_tich}\n"
                                f"**Người chế biến:** {username}"
                 )
                 await ctx.send(embed=embed)
@@ -267,17 +292,25 @@ class KhoCommands(commands.Cog):
             return
             
         if not args:
-            await ctx.send("⚠️ **Sai định dạng!**\\n"
-                          "📝 **Cú pháp:** `/huynguyenlieu Tên nguyên liệu - Số lượng/trọng lượng - lý do huỷ`\\n"
-                          "📋 **Ví dụ:** `/huynguyenlieu Cà phê - 1kg - hết hạn`")
+            embed = discord.Embed(
+                title="⚠️ Sai định dạng!",
+                color=discord.Color.orange(),
+                description="📝 **Cú pháp:** `/huynguyenlieu Tên nguyên liệu - Số lượng/trọng lượng - lý do huỷ`\n"
+                           "📋 **Ví dụ:** `/huynguyenlieu Cà phê - 1kg - hết hạn`"
+            )
+            await ctx.send(embed=embed)
             return
         
         # Parse arguments
         parts = self._parse_command_args(args, 3)
         if not parts:
-            await ctx.send("⚠️ **Sai định dạng!**\\n"
-                          "📝 **Cú pháp:** `/huynguyenlieu Tên nguyên liệu - Số lượng/trọng lượng - lý do huỷ`\\n"
-                          "📋 **Ví dụ:** `/huynguyenlieu Cà phê - 1kg - hết hạn`")
+            embed = discord.Embed(
+                title="⚠️ Sai định dạng!",
+                color=discord.Color.orange(),
+                description="📝 **Cú pháp:** `/huynguyenlieu Tên nguyên liệu - Số lượng/trọng lượng - lý do huỷ`\n"
+                           "📋 **Ví dụ:** `/huynguyenlieu Cà phê - 1kg - hết hạn`"
+            )
+            await ctx.send(embed=embed)
             return
         
         try:
@@ -299,9 +332,9 @@ class KhoCommands(commands.Cog):
                 embed = discord.Embed(
                     title="✅ Hủy Nguyên Liệu Thành Công",
                     color=discord.Color.red(),
-                    description=f"**Nguyên liệu:** {ten_nguyen_lieu}\\n"
-                               f"**Số lượng hủy:** {so_luong_huy}\\n"
-                               f"**Lý do:** {ly_do}\\n"
+                    description=f"**Nguyên liệu:** {ten_nguyen_lieu}\n"
+                               f"**Số lượng hủy:** {so_luong_huy}\n"
+                               f"**Lý do:** {ly_do}\n"
                                f"**Người hủy:** {username}"
                 )
                 await ctx.send(embed=embed)
@@ -370,34 +403,38 @@ class KhoCommands(commands.Cog):
         embed = discord.Embed(
             title="📦 Hướng Dẫn Lệnh Quản Lý Kho",
             color=discord.Color.gold(),
-            description=f"Danh sách các lệnh quản lý kho vật tư/nguyên liệu\\n"
-                       f"🔒 **Chỉ hoạt động trong kênh #{self.allowed_channel}**"
+            description=f"Danh sách các lệnh quản lý kho vật tư/nguyên liệu\n"
+                       f"🔒 **Chỉ hoạt động trong kênh #{self.allowed_channel}**\n"
         )
         
         embed.add_field(
             name="📥 `/nhapkho`",
-            value="**Cú pháp:** `Tên nguyên liệu - SL nhập - Tổng SL`\\n"
+            value="**Cú pháp:** `Tên nguyên liệu - SL nhập - Tổng SL`"
+            "\n"
                   "**Ví dụ:** `/nhapkho Cà phê - 10 - 50`",
             inline=False
         )
         
         embed.add_field(
             name="📤 `/xuatkho`",
-            value="**Cú pháp:** `Tên nguyên liệu - SL xuất - SL còn lại`\\n"
+            value="**Cú pháp:** `Tên nguyên liệu - SL xuất - SL còn lại`"
+            "\n"
                   "**Ví dụ:** `/xuatkho Cà phê - 5 - 45`",
             inline=False
         )
         
         embed.add_field(
             name="🔄 `/chebien`",
-            value="**Cú pháp:** `Tên nguyên liệu - Dung tích có được`\\n"
+            value="**Cú pháp:** `Tên nguyên liệu - Dung tích có được`"
+            "\n"
                   "**Ví dụ:** `/chebien Cà phê rang - 2 lít`",
             inline=False
         )
         
         embed.add_field(
             name="🗑️ `/huynguyenlieu`",
-            value="**Cú pháp:** `Tên nguyên liệu - Số lượng/trọng lượng - lý do huỷ`\\n"
+            value="**Cú pháp:** `Tên nguyên liệu - Số lượng/trọng lượng - lý do huỷ`"
+            "\n"
                   "**Ví dụ:** `/huynguyenlieu Cà phê - 1kg - hết hạn`",
             inline=False
         )
