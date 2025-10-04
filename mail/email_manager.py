@@ -463,7 +463,7 @@ class EmailManager:
                         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
                         
                         <p style="text-align: center; color: #666; font-size: 14px;">
-                            Cảm ơn bạn đã sử dụng dịch vụ của <strong>{getattr(Config, 'COMPANY_NAME', 'Your Company')}</strong>!<br>
+                            Cảm ơn bạn đã sử dụng dịch vụ của <strong>Work's Pied Coffee - Workspace</strong>!<br>
                             Email này được gửi tự động, vui lòng không reply.
                         </p>
                     </div>
@@ -506,8 +506,8 @@ class EmailManager:
             LIÊN HỆ HỖ TRỢ:
             📧 Email: {getattr(Config, 'COMPANY_EMAIL', 'contact@company.com')}
             📞 Điện thoại: {getattr(Config, 'COMPANY_PHONE', '+84 123 456 789')}
-            
-            Cảm ơn bạn đã sử dụng dịch vụ của {getattr(Config, 'COMPANY_NAME', 'Your Company')}!
+
+            Cảm ơn bạn đã sử dụng dịch vụ của Work's Pied Coffee - Workspace!
             """
         
         return subject, html_body, text_body
