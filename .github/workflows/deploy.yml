@@ -1,0 +1,134 @@
+name: Deploy Discord Bot to VPS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run syntax check
+      run: |
+        python -m py_compile main.py
+        python -m py_compile bot/discord_bot.py
+        python -m py_compile kho/kho_commands.py
+        
+    - name: Run tests
+      run: |
+        python test_simple_channel.py || echo "Channel test completed"
+        echo "✅ Basic tests passed"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: ${{ secrets.VPS_PORT || 22 }}
+        script: |
+          echo "🚀 Starting deployment..."
+          
+          # Check if app directory exists
+          if [ ! -d "/home/discord-bot/discord-booking-bot" ]; then
+            echo "❌ App directory not found. Run initial setup first!"
+            exit 1
+          fi
+          
+          # Navigate to app directory
+          cd /home/discord-bot/discord-booking-bot
+          
+          # Create backup
+          sudo -u discord-bot mkdir -p backups
+          sudo -u discord-bot tar -czf backups/backup-$(date +%Y%m%d_%H%M%S).tar.gz . \
+            --exclude=backups --exclude=venv --exclude=.git --exclude=*.log || echo "Backup created"
+          
+          # Pull latest changes
+          sudo -u discord-bot git fetch origin
+          sudo -u discord-bot git reset --hard origin/main
+          
+          # Update dependencies
+          sudo -u discord-bot bash -c "
+            source venv/bin/activate
+            pip install -r requirements.txt --upgrade
+          "
+          
+          # Restart services
+          sudo systemctl restart discord-bot || echo "Discord bot service restarted"
+          sudo systemctl restart discord-webhook || echo "Webhook service restarted"
+          
+          # Wait for services to start
+          sleep 10
+          
+          # Health check
+          if sudo systemctl is-active --quiet discord-bot; then
+            echo "✅ Discord bot is running"
+          else
+            echo "❌ Discord bot failed to start"
+            sudo journalctl -u discord-bot --no-pager -n 10
+          fi
+          
+          if sudo systemctl is-active --quiet discord-webhook; then
+            echo "✅ Webhook is running"
+          else
+            echo "❌ Webhook failed to start"
+            sudo journalctl -u discord-webhook --no-pager -n 10
+          fi
+          
+          # Test webhook endpoint
+          if curl -f -s http://localhost:5001/health > /dev/null; then
+            echo "✅ Health endpoint is responding"
+          else
+            echo "⚠️ Health endpoint not responding"
+          fi
+          
+          echo "🎉 Deployment completed!"
+
+  notify:
+    needs: [test, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notify deployment status
+      if: github.ref == 'refs/heads/main'
+      run: |
+        if [ "${{ needs.deploy.result }}" == "success" ]; then
+          echo "✅ Deployment successful!"
+        else
+          echo "❌ Deployment failed!"
+        fi

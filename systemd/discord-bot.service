@@ -1,0 +1,39 @@
+[Unit]
+Description=Discord Booking Bot Service
+After=network.target network-online.target
+Wants=network-online.target
+Requires=network.target
+
+[Service]
+Type=simple
+User=discord-bot
+Group=discord-bot
+WorkingDirectory=/home/discord-bot/discord-booking-bot
+Environment=PATH=/home/discord-bot/discord-booking-bot/venv/bin
+Environment=PYTHONPATH=/home/discord-bot/discord-booking-bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/discord-bot/discord-booking-bot/venv/bin/python main.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+TimeoutStartSec=60
+TimeoutStopSec=20
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=discord-bot
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/discord-bot/discord-booking-bot/logs
+ReadWritePaths=/home/discord-bot/discord-booking-bot/backups
+ReadWritePaths=/tmp
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

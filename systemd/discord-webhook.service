@@ -1,0 +1,38 @@
+[Unit]
+Description=Discord Booking Webhook Service  
+After=network.target network-online.target
+Wants=network-online.target
+Requires=network.target
+
+[Service]
+Type=simple
+User=discord-bot
+Group=discord-bot
+WorkingDirectory=/home/discord-bot/discord-booking-bot
+Environment=PATH=/home/discord-bot/discord-booking-bot/venv/bin
+Environment=PYTHONPATH=/home/discord-bot/discord-booking-bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/discord-bot/discord-booking-bot/venv/bin/python -c "from web.webhook_server import create_app; app = create_app(); app.run(host='0.0.0.0', port=5001)"
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+TimeoutStartSec=30
+TimeoutStopSec=15
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=discord-webhook
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/discord-bot/discord-booking-bot/logs
+ReadWritePaths=/tmp
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=25%
+
+[Install]
+WantedBy=multi-user.target
